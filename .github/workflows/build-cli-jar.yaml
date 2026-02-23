@@ -1,0 +1,86 @@
+name: Build CLI JAR
+
+on:
+  push:
+    branches:
+      - erlang-server-operationid-fix
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build CLI JAR
+        run: ./mvnw clean package -DskipTests -pl modules/openapi-generator-cli -am
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-generator-cli-${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}
+          path: modules/openapi-generator-cli/target/openapi-generator-cli.jar
+          retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build CLI JAR
+        run: ./mvnw clean package -DskipTests -pl modules/openapi-generator-cli -am
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: modules/openapi-generator-cli/target/openapi-generator-cli.jar
+          name: Release ${{ github.ref_name }}
+          body: |
+            OpenAPI Generator CLI JAR with Erlang server fixes:
+            - Auto-generate operationId from path+method when missing
+            - Add application/merge-patch+json to content_types_accepted
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
