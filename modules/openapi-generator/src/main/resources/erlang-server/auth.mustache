@@ -11,17 +11,18 @@
     {false, binary(), cowboy_req:req()}.
 authorize_api_key(Handler, OperationID, From, KeyParam, Req0) ->
     {ApiKey, Req} = get_api_key(From, KeyParam, Req0),
-    case ApiKey of
-        undefined ->
-            AuthHeader = <<>>,
-            {false, AuthHeader, Req};
-        _ ->
-            case Handler(OperationID, ApiKey) of
-                {true, Context} ->
-                    {true, Context, Req};
-                {false, AuthHeader} ->
-                    {false, AuthHeader, Req}
-            end
+    %% Always call the handler, even when ApiKey is undefined.
+    %% This lets the user's logic handler decide how to handle
+    %% requests without an API key (e.g., allow public endpoints).
+    Key = case ApiKey of
+        undefined -> <<>>;
+        _ -> ApiKey
+    end,
+    case Handler(OperationID, Key) of
+        {true, Context} ->
+            {true, Context, Req};
+        {false, AuthHeader} ->
+            {false, AuthHeader, Req}
     end.
 
 get_api_key(header, KeyParam, Req) ->

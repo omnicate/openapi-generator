@@ -88,6 +88,8 @@ is_authorized(Req, State) ->
     {{^consumes.size}}
     {[
       {<<"application/json">>, handle_type_accepted},
+      {<<"application/3gpp-hal+json">>, handle_type_accepted},
+      {<<"application/json-patch+json">>, handle_type_accepted},
       {<<"application/merge-patch+json">>, handle_type_accepted}
      ], Req, State};
     {{/consumes.size}}
@@ -96,11 +98,19 @@ is_authorized(Req, State) ->
     {{#consumes}}
       {<<"{{{mediaType}}}">>, handle_type_accepted},
     {{/consumes}}
+      {<<"application/json">>, handle_type_accepted},
+      {<<"application/3gpp-hal+json">>, handle_type_accepted},
+      {<<"application/json-patch+json">>, handle_type_accepted},
       {<<"application/merge-patch+json">>, handle_type_accepted}
      ], Req, State};
     {{/consumes.size}}
 {{/operation}}{{/operations}}content_types_accepted(Req, State) ->
-    {[], Req, State}.
+    {[
+      {<<"application/json">>, handle_type_accepted},
+      {<<"application/3gpp-hal+json">>, handle_type_accepted},
+      {<<"application/json-patch+json">>, handle_type_accepted},
+      {<<"application/merge-patch+json">>, handle_type_accepted}
+     ], Req, State}.
 
 -spec valid_content_headers(cowboy_req:req(), state()) ->
     {boolean(), cowboy_req:req(), state()}.
@@ -113,23 +123,38 @@ is_authorized(Req, State) ->
     {[{binary(), atom()}], cowboy_req:req(), state()}.
 {{#operations}}{{#operation}}content_types_provided(Req, #state{operation_id = '{{operationIdOriginal}}'} = State) ->
     {{^produces.size}}
-    {[], Req, State};
+    {[
+      {<<"application/json">>, handle_type_provided},
+      {<<"application/3gpp-hal+json">>, handle_type_provided},
+      {<<"application/problem+json">>, handle_type_provided}
+     ], Req, State};
     {{/produces.size}}
     {{#produces.size}}
     {[
     {{#produces}}
-      {<<"{{{mediaType}}}">>, handle_type_provided}{{^-last}}{{#produces.size}},{{/produces.size}}{{/-last}}
+      {<<"{{{mediaType}}}">>, handle_type_provided},
     {{/produces}}
+      {<<"application/3gpp-hal+json">>, handle_type_provided},
+      {<<"application/problem+json">>, handle_type_provided}
      ], Req, State};
     {{/produces.size}}
 {{/operation}}{{/operations}}content_types_provided(Req, State) ->
-    {[], Req, State}.
+    {[
+      {<<"application/json">>, handle_type_provided},
+      {<<"application/3gpp-hal+json">>, handle_type_provided},
+      {<<"application/problem+json">>, handle_type_provided}
+     ], Req, State}.
 
 -spec delete_resource(cowboy_req:req(), state()) ->
-    {boolean(), cowboy_req:req(), state()}.
+    {stop, cowboy_req:req(), state()} | {boolean(), cowboy_req:req(), state()}.
 delete_resource(Req, State) ->
-    {Res, Req1, State1} = handle_type_accepted(Req, State),
-    {true =:= Res, Req1, State1}.
+    case handle_type_accepted(Req, State) of
+        {stop, Req1, State1} ->
+            %% Response already sent by callback
+            {stop, Req1, State1};
+        {Res, Req1, State1} ->
+            {true =:= Res, Req1, State1}
+    end.
 
 -spec handle_type_accepted(cowboy_req:req(), state()) ->
     { {{packageName}}_logic_handler:accept_callback_return(), cowboy_req:req(), state()}.

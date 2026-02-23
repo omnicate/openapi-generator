@@ -52,6 +52,6 @@ get_operations() ->
             base_path => "{{{basePathWithoutHost}}}",
             path => "{{{path}}}",
             method => <<"{{httpMethod}}">>,
-            handler => '{{classname}}'
+            handler => '{{packageName}}_default_handler'
         }{{^-last}},{{/-last}}{{/operation}}{{^-last}},{{/-last}}{{/operations}}{{/apis}}{{/apiInfo}}
     }.
