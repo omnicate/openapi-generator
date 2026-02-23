@@ -86,13 +86,17 @@ is_authorized(Req, State) ->
     {[{binary(), atom()}], cowboy_req:req(), state()}.
 {{#operations}}{{#operation}}content_types_accepted(Req, #state{operation_id = '{{operationIdOriginal}}'} = State) ->
     {{^consumes.size}}
-    {[], Req, State};
+    {[
+      {<<"application/json">>, handle_type_accepted},
+      {<<"application/merge-patch+json">>, handle_type_accepted}
+     ], Req, State};
     {{/consumes.size}}
     {{#consumes.size}}
     {[
     {{#consumes}}
-      {<<"{{{mediaType}}}">>, handle_type_accepted}{{^-last}}{{#consumes.size}},{{/consumes.size}}{{/-last}}
+      {<<"{{{mediaType}}}">>, handle_type_accepted},
     {{/consumes}}
+      {<<"application/merge-patch+json">>, handle_type_accepted}
      ], Req, State};
     {{/consumes.size}}
 {{/operation}}{{/operations}}content_types_accepted(Req, State) ->

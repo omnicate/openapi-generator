@@ -278,8 +278,56 @@ public class ErlangServerCodegen extends DefaultCodegen implements CodegenConfig
             if (op.path != null) {
                 op.path = op.path.replaceAll("\\{(.*?)\\}", ":$1");
             }
+            // Generate operationId from path + method if not provided
+            if (op.operationId == null || op.operationId.isEmpty() ||
+                op.operationIdOriginal == null || op.operationIdOriginal.isEmpty()) {
+                String generatedId = pathToOperationId(op.path, op.httpMethod);
+                if (op.operationId == null || op.operationId.isEmpty()) {
+                    op.operationId = generatedId;
+                }
+                if (op.operationIdOriginal == null || op.operationIdOriginal.isEmpty()) {
+                    op.operationIdOriginal = generatedId;
+                }
+                LOGGER.info("Generated operationId '{}' for {} {}", generatedId, op.httpMethod, op.path);
+            }
         }
         return objs;
+    }
+
+    /**
+     * Generate an operationId from path and HTTP method when not provided in the spec.
+     * Converts path like "/ue-authentications/:authCtxId" to "UeAuthenticationsAuthctxidPost".
+     */
+    private String pathToOperationId(String path, String method) {
+        if (path == null) {
+            path = "";
+        }
+        // Remove leading slash
+        path = path.replaceFirst("^/", "");
+        // Replace path separators, params (:param), and special chars with underscores
+        path = path.replaceAll("[/:.-]", "_");
+        // Remove duplicate underscores
+        path = path.replaceAll("_+", "_");
+        // Remove leading/trailing underscores
+        path = path.replaceAll("^_|_$", "");
+        // Convert to CamelCase
+        StringBuilder sb = new StringBuilder();
+        for (String part : path.split("_")) {
+            if (!part.isEmpty()) {
+                sb.append(part.substring(0, 1).toUpperCase());
+                if (part.length() > 1) {
+                    sb.append(part.substring(1).toLowerCase());
+                }
+            }
+        }
+        // Add method suffix (capitalize first letter, lowercase rest)
+        if (method != null && !method.isEmpty()) {
+            sb.append(method.substring(0, 1).toUpperCase());
+            if (method.length() > 1) {
+                sb.append(method.substring(1).toLowerCase());
+            }
+        }
+        return sb.toString();
     }
 
     @Override
