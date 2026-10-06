@@ -26,9 +26,16 @@ import org.openapitools.codegen.model.OperationsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +48,7 @@ public class ErlangServerCodegen extends DefaultCodegen implements CodegenConfig
 
     protected String apiVersion = "1.0.0";
     protected String apiPath = "src";
+    private static final String MEDIA_TYPES_RESOURCE = "/erlang-server/media-types.txt";
     @Setter protected String packageName = "openapi";
     @Setter protected String openApiSpecName = "openapi";
 
@@ -162,6 +170,7 @@ public class ErlangServerCodegen extends DefaultCodegen implements CodegenConfig
          */
         additionalProperties.put("apiVersion", apiVersion);
         additionalProperties.put("apiPath", apiPath);
+        additionalProperties.putAll(loadExtraMediaTypes());
         /**
          * Supporting Files.  You can write single files for the generator with the
          * entire object tree available.  If the input file has a suffix of `.mustache
@@ -178,6 +187,42 @@ public class ErlangServerCodegen extends DefaultCodegen implements CodegenConfig
         supportingFiles.add(new SupportingFile("default_handler.mustache", "", toSourceFilePath("default_handler", "erl")));
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md")
                 .doNotOverwrite());
+    }
+
+    /**
+     * Reads media-types.txt. Each non-comment line is "accepted|provided &lt;media type&gt;".
+     * Returns the template variables extraAcceptedMediaTypes and extraProvidedMediaTypes,
+     * each a list of {mediaType: ...} maps.
+     */
+    private Map<String, Object> loadExtraMediaTypes() {
+        List<Map<String, String>> accepted = new ArrayList<>();
+        List<Map<String, String>> provided = new ArrayList<>();
+        try (InputStream in = getClass().getResourceAsStream(MEDIA_TYPES_RESOURCE)) {
+            if (in == null) {
+                throw new IllegalStateException("Missing resource " + MEDIA_TYPES_RESOURCE);
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] parts = line.split("\\s+", 2);
+                if (parts.length != 2 || !("accepted".equals(parts[0]) || "provided".equals(parts[0]))) {
+                    throw new IllegalStateException("Invalid line in " + MEDIA_TYPES_RESOURCE + ": " + line);
+                }
+                Map<String, String> entry = new HashMap<>();
+                entry.put("mediaType", parts[1]);
+                ("accepted".equals(parts[0]) ? accepted : provided).add(entry);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read " + MEDIA_TYPES_RESOURCE, e);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("extraAcceptedMediaTypes", accepted);
+        result.put("extraProvidedMediaTypes", provided);
+        return result;
     }
 
     @Override

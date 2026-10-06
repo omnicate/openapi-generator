@@ -69,10 +69,10 @@ init(Req, {Operations, Module}) ->
 {{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}content_types_accepted(Req, #state{operation_id = '{{operationIdOriginal}}'} = State) ->
     {{^consumes.size}}
     {[
-      {<<"application/json">>, handle_type_accepted},
-      {<<"application/3gpp-hal+json">>, handle_type_accepted},
-      {<<"application/json-patch+json">>, handle_type_accepted},
-      {<<"application/merge-patch+json">>, handle_type_accepted}
+    {{#extraAcceptedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_accepted},
+    {{/extraAcceptedMediaTypes}}
+      {<<"application/json">>, handle_type_accepted}
      ], Req, State};
     {{/consumes.size}}
     {{#consumes.size}}
@@ -80,18 +80,18 @@ init(Req, {Operations, Module}) ->
     {{#consumes}}
       {<<"{{{mediaType}}}">>, handle_type_accepted},
     {{/consumes}}
-      {<<"application/json">>, handle_type_accepted},
-      {<<"application/3gpp-hal+json">>, handle_type_accepted},
-      {<<"application/json-patch+json">>, handle_type_accepted},
-      {<<"application/merge-patch+json">>, handle_type_accepted}
+    {{#extraAcceptedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_accepted},
+    {{/extraAcceptedMediaTypes}}
+      {<<"application/json">>, handle_type_accepted}
      ], Req, State};
     {{/consumes.size}}
 {{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}content_types_accepted(Req, State) ->
     {[
-      {<<"application/json">>, handle_type_accepted},
-      {<<"application/3gpp-hal+json">>, handle_type_accepted},
-      {<<"application/json-patch+json">>, handle_type_accepted},
-      {<<"application/merge-patch+json">>, handle_type_accepted}
+    {{#extraAcceptedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_accepted},
+    {{/extraAcceptedMediaTypes}}
+      {<<"application/json">>, handle_type_accepted}
      ], Req, State}.
 
 -spec valid_content_headers(cowboy_req:req(), state()) ->
@@ -106,9 +106,10 @@ init(Req, {Operations, Module}) ->
 {{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}content_types_provided(Req, #state{operation_id = '{{operationIdOriginal}}'} = State) ->
     {{^produces.size}}
     {[
-      {<<"application/json">>, handle_type_provided},
-      {<<"application/3gpp-hal+json">>, handle_type_provided},
-      {<<"application/problem+json">>, handle_type_provided}
+    {{#extraProvidedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_provided},
+    {{/extraProvidedMediaTypes}}
+      {<<"application/json">>, handle_type_provided}
      ], Req, State};
     {{/produces.size}}
     {{#produces.size}}
@@ -116,15 +117,18 @@ init(Req, {Operations, Module}) ->
     {{#produces}}
       {<<"{{{mediaType}}}">>, handle_type_provided},
     {{/produces}}
-      {<<"application/3gpp-hal+json">>, handle_type_provided},
-      {<<"application/problem+json">>, handle_type_provided}
+    {{#extraProvidedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_provided},
+    {{/extraProvidedMediaTypes}}
+      {<<"application/json">>, handle_type_provided}
      ], Req, State};
     {{/produces.size}}
 {{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}content_types_provided(Req, State) ->
     {[
-      {<<"application/json">>, handle_type_provided},
-      {<<"application/3gpp-hal+json">>, handle_type_provided},
-      {<<"application/problem+json">>, handle_type_provided}
+    {{#extraProvidedMediaTypes}}
+      {<<"{{{mediaType}}}">>, handle_type_provided},
+    {{/extraProvidedMediaTypes}}
+      {<<"application/json">>, handle_type_provided}
      ], Req, State}.
 
 -spec delete_resource(cowboy_req:req(), state()) ->

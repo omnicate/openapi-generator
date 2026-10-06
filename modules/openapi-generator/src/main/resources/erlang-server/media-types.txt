@@ -1,0 +1,10 @@
+# Media types added to every generated Erlang handler, on top of the ones the spec declares.
+# Format: <accepted|provided> <media type>
+# Names follow the IANA media type registry (e.g. 3gppHal+json, not 3gpp-hal+json).
+# NOTE: application/json is NOT listed here. The templates always emit it as the
+# final entry, because Erlang does not allow a trailing comma after the last list element.
+accepted application/3gppHal+json
+accepted application/json-patch+json
+accepted application/merge-patch+json
+provided application/3gppHal+json
+provided application/problem+json
